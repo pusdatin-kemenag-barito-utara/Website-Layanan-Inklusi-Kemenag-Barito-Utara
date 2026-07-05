@@ -1,26 +1,149 @@
 import { NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-export default function proxy(request) {
-  const path = request.nextUrl.pathname;
-  
-  // Define protected routes
-  const isProtectedRoute = path.startsWith('/admin/dashboard');
-  
-  // Check auth cookie
-  const isAuthenticated = request.cookies.has('admin_session');
+export async function proxy(request) {
+  const { pathname } = request.nextUrl;
 
-  if (isProtectedRoute && !isAuthenticated) {
+  // Allow health endpoint
+  if (pathname === '/api/health') {
+    return NextResponse.next();
+  }
+
+  // === MAINTENANCE CHECK ===
+  try {
+    const pusdatinUrl = process.env.NEXT_PUBLIC_PUSDATIN_URL || "https://pusdatin.kemenag-baritoutara.go.id";
+    const appId = "inklusi_kemenag";
+
+    const maintenanceRes = await fetch(
+      `${pusdatinUrl}/api/public/apps/${appId}/status`,
+      {
+        next: { revalidate: 30 },
+      }
+    );
+
+    if (maintenanceRes.ok) {
+      const data = await maintenanceRes.json();
+      if (data.status === "maintenance") {
+        return new NextResponse(
+          `
+          <!DOCTYPE html>
+          <html lang="id">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Sistem Sedang Pemeliharaan</title>
+              <link rel="icon" href="${pusdatinUrl}/branding/kemenag.svg" type="image/svg+xml">
+              <style>
+                body { margin: 0; overflow: hidden; background-color: #f8fafc; }
+                iframe { width: 100vw; height: 100vh; border: none; }
+              </style>
+            </head>
+            <body>
+              <iframe src="${pusdatinUrl}/maintenance?app=Pusat+Layanan+Inklusi" title="Maintenance"></iframe>
+            </body>
+          </html>
+        `,
+          {
+            status: 503,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+            },
+          }
+        );
+      }
+    }
+  } catch (error) {
+    console.error("[PROXY] Failed to fetch maintenance status:", error);
+  }
+
+  // === SESSION HANDLING ===
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      db: {
+        schema: "kemenag_inklusi",
+      },
+      cookieOptions: {
+        name: "inklusi-auth",
+      },
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isProtectedRoute = pathname.startsWith('/admin/dashboard');
+
+  if (isProtectedRoute && !user) {
     return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
-  // Redirect authenticated users away from login
-  if (path === '/admin/login' && isAuthenticated) {
+  if (isProtectedRoute && user) {
+    try {
+      const supabaseAdmin = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        {
+          db: { schema: "kemenag_pusdatin" },
+          cookies: {
+            getAll() { return []; },
+            setAll() { },
+          }
+        }
+      );
+      
+      const { data: userRecord } = await supabaseAdmin
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (userRecord?.role !== 'super_admin') {
+        const { data: perm } = await supabaseAdmin
+          .from('app_permissions')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('app_id', 'inklusi_kemenag')
+          .single();
+          
+        if (!perm) {
+          const url = new URL('/admin/login', request.url);
+          url.searchParams.set('error', 'unauthorized');
+          return NextResponse.redirect(url);
+        }
+      }
+    } catch (e) {
+      console.error("[PROXY] RBAC error:", e);
+    }
+  }
+
+  if (pathname === '/admin/login' && user) {
     return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

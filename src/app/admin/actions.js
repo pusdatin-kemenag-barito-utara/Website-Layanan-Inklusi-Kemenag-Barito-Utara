@@ -2,7 +2,8 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@supabase/ssr';
+import { Client } from 'pg';
 
 export async function loginAction(formData) {
   const email = formData.get('email');
@@ -30,16 +31,41 @@ export async function loginAction(formData) {
     }
   }
 
-  // Supabase Authentication
+  const cookieStore = await cookies();
+
+  // Supabase SSR Authentication
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      db: {
+        schema: "kemenag_inklusi",
+      },
+      cookieOptions: {
+        name: "inklusi-auth",
+      },
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch (error) {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
+
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email: email,
     password: password,
-  });
-
-  console.log('Supabase Auth Attempt:', { 
-    email, 
-    authDataUser: !!authData?.user, 
-    authError: authError?.message || authError 
   });
 
   if (authError || !authData.user) {
@@ -47,19 +73,76 @@ export async function loginAction(formData) {
     return { error: authError ? authError.message : 'Email atau password salah' };
   }
 
-  const rememberMe = formData.get('rememberMe') === 'on';
+  // RBAC Check via Pusdatin direct DB connection
+  const pgClient = new Client({
+    connectionString: process.env.DATABASE_URL
+  });
   
-  // Set session cookie
-  const cookieOptions = { httpOnly: true, secure: true, path: '/' };
-  if (rememberMe) {
-    cookieOptions.maxAge = 60 * 60 * 24 * 30; // 30 days
+  await pgClient.connect();
+  
+  try {
+    const userResult = await pgClient.query(
+      `SELECT id, role FROM kemenag_pusdatin.users WHERE email = $1`,
+      [authData.user.email]
+    );
+
+    if (userResult.rows.length === 0) {
+      await supabase.auth.signOut();
+      return { error: 'Akun tidak ditemukan di sistem pusat.' };
+    }
+
+    const userRecord = userResult.rows[0];
+
+    if (userRecord?.role !== 'super_admin') {
+      const permissionResult = await pgClient.query(
+        `SELECT * FROM kemenag_pusdatin.app_permissions WHERE user_id = $1 AND app_id = $2`,
+        [userRecord.id, 'inklusi_kemenag']
+      );
+
+      if (permissionResult.rows.length === 0 || permissionResult.rows[0].role === 'none') {
+        await supabase.auth.signOut();
+        return { error: 'Akun Anda tidak memiliki akses ke aplikasi Pusat Layanan Inklusi.' };
+      }
+    }
+  } catch (err) {
+    console.error('RBAC Error:', err);
+    await supabase.auth.signOut();
+    return { error: 'Terjadi kesalahan sistem saat mengecek akses.' };
+  } finally {
+    await pgClient.end();
   }
-  
-  (await cookies()).set('admin_session', 'true', cookieOptions);
-  redirect('/admin/dashboard');
+
+  return { success: true };
 }
 
 export async function logoutAction() {
-  (await cookies()).delete('admin_session');
+  const cookieStore = await cookies();
+  
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      db: {
+        schema: "kemenag_inklusi",
+      },
+      cookieOptions: {
+        name: "inklusi-auth",
+      },
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch (error) {}
+        },
+      },
+    }
+  );
+
+  await supabase.auth.signOut();
   redirect('/admin/login');
 }

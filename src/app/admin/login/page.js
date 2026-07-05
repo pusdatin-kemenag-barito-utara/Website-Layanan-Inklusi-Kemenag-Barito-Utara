@@ -29,10 +29,21 @@ export default function LoginPage() {
     }
     formData.append('turnstileToken', turnstileToken);
     
-    const result = await loginAction(formData);
-    
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const result = await loginAction(formData);
+      
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+      } else if (result?.success) {
+        router.push('/admin/dashboard');
+      } else {
+        // Fallback if no error and no success explicitly returned
+        router.push('/admin/dashboard');
+      }
+    } catch (err) {
+      console.error('Login Error:', err);
+      setError('Terjadi kesalahan yang tidak terduga pada server.');
       setLoading(false);
     }
   };

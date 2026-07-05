@@ -35,7 +35,9 @@ export default function JadwalSholat() {
           })));
         }
       } catch (error) {
-        console.error("Gagal mengambil jadwal sholat:", error);
+        if (process.env.NODE_ENV !== 'development') {
+          console.error("Gagal mengambil jadwal sholat:", error.message || error);
+        }
       }
     };
     fetchJadwal();
