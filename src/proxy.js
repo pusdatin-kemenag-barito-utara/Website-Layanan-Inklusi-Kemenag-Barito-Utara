@@ -9,11 +9,6 @@ export async function proxy(request) {
     return NextResponse.next();
   }
 
-  // Bypass maintenance check if user is already visiting /maintenance
-  if (pathname === '/maintenance') {
-    return NextResponse.next();
-  }
-
   // === MAINTENANCE CHECK ===
   try {
     const pusdatinUrl = process.env.NEXT_PUBLIC_PUSDATIN_URL || "https://pusdatin.kemenag-baritoutara.go.id";
@@ -22,14 +17,24 @@ export async function proxy(request) {
     const maintenanceRes = await fetch(
       `${pusdatinUrl}/api/public/apps/${appId}/status`,
       {
-        next: { revalidate: 30 },
+        cache: 'no-store',
       }
     );
 
     if (maintenanceRes.ok) {
       const data = await maintenanceRes.json();
-      if (data.status === "maintenance") {
-        return NextResponse.redirect(new URL('/maintenance', request.url));
+      const isMaintenance = data.status === "maintenance";
+
+      if (isMaintenance && pathname !== '/maintenance') {
+        return NextResponse.redirect(new URL('/maintenance', request.url), {
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+        });
+      }
+
+      if (!isMaintenance && pathname === '/maintenance') {
+        return NextResponse.redirect(new URL('/', request.url), {
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' },
+        });
       }
     }
   } catch (error) {
