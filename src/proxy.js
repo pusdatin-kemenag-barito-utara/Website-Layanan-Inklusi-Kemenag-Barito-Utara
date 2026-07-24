@@ -9,6 +9,11 @@ export async function proxy(request) {
     return NextResponse.next();
   }
 
+  // Bypass maintenance check if user is already visiting /maintenance
+  if (pathname === '/maintenance') {
+    return NextResponse.next();
+  }
+
   // === MAINTENANCE CHECK ===
   try {
     const pusdatinUrl = process.env.NEXT_PUBLIC_PUSDATIN_URL || "https://pusdatin.kemenag-baritoutara.go.id";
@@ -24,32 +29,7 @@ export async function proxy(request) {
     if (maintenanceRes.ok) {
       const data = await maintenanceRes.json();
       if (data.status === "maintenance") {
-        return new NextResponse(
-          `
-          <!DOCTYPE html>
-          <html lang="id">
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1">
-              <title>Sistem Sedang Pemeliharaan</title>
-              <link rel="icon" href="${pusdatinUrl}/branding/kemenag.svg" type="image/svg+xml">
-              <style>
-                body { margin: 0; overflow: hidden; background-color: #f8fafc; }
-                iframe { width: 100vw; height: 100vh; border: none; }
-              </style>
-            </head>
-            <body>
-              <iframe src="${pusdatinUrl}/maintenance?app=Pusat+Layanan+Inklusi" title="Maintenance"></iframe>
-            </body>
-          </html>
-        `,
-          {
-            status: 503,
-            headers: {
-              "Content-Type": "text/html; charset=utf-8",
-            },
-          }
-        );
+        return NextResponse.redirect(new URL('/maintenance', request.url));
       }
     }
   } catch (error) {

@@ -1,8 +1,6 @@
 import { Plus_Jakarta_Sans } from "next/font/google";
 import AccessibilityProvider from "@/components/layout/AccessibilityProvider";
-import AccessibilityWidget from "@/components/layout/AccessibilityWidget";
-import LiveChatWidget from "@/components/layout/LiveChatWidget";
-import Chatbot from "@/components/ui/Chatbot";
+import AppWidgets from "@/components/layout/AppWidgets";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -21,9 +19,7 @@ export default function RootLayout({ children }) {
       <body>
         <AccessibilityProvider>
           {children}
-          <AccessibilityWidget />
-          <LiveChatWidget />
-          <Chatbot />
+          <AppWidgets />
         </AccessibilityProvider>
       </body>
     </html>
