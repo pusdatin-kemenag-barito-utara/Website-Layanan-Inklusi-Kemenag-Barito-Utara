@@ -1,0 +1,471 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+export const prerender = false;
+---
+
+<Layout>
+  <div class="maintenance-root">
+    <!-- Ambient glowing backdrop orbs matching Pusdatin design -->
+    <div class="glow-orb glow-emerald"></div>
+    <div class="glow-orb glow-blue"></div>
+
+    <div class="maintenance-container">
+      <!-- Official Pusdatin Header Badge -->
+      <div class="pusdatin-header-badge">
+        <img src="/favicon.svg" alt="Logo Kemenag" class="pusdatin-badge-logo" />
+        <div class="pusdatin-badge-text">
+          <span class="badge-title">PUSDATIN</span>
+          <span class="badge-sub">Kemenag Barito Utara</span>
+        </div>
+      </div>
+
+      <!-- Icon Unit: Gear Settings (Emerald) + Wrench (Blue Badge) -->
+      <div class="icon-wrapper">
+        <div class="icon-card">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#059669"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="gear-icon"
+          >
+            <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <div class="wrench-badge">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ffffff"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Heading (Pusdatin Style) -->
+      <h1 class="main-title">Sistem Sedang Pemeliharaan</h1>
+
+      <!-- Description Body -->
+      <p class="main-desc">
+        Aplikasi <strong>Pusat Layanan Inklusi</strong> saat ini sedang dalam mode perbaikan terpusat oleh Tim Pusdatin Kemenag Barito Utara. Kami sedang melakukan peningkatan sistem untuk memberikan pengalaman yang lebih baik.
+      </p>
+
+      <!-- Status Pills (Amber & Emerald) -->
+      <div class="pills-row">
+        <div class="status-pill pill-amber">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+            <path d="M12 9v4"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
+          <span>Akses Sementara Ditutup</span>
+        </div>
+        <div class="status-pill pill-emerald">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+          <span>Silakan periksa kembali nanti</span>
+        </div>
+      </div>
+
+      <!-- Realtime Auto-Detection Notice -->
+      <div class="realtime-status-box">
+        <div class="pulse-indicator">
+          <span class="pulse-ring"></span>
+          <span class="pulse-dot"></span>
+        </div>
+        <span id="sync-text">Terhubung real-time ke Pusdatin — dialihkan otomatis begitu selesai.</span>
+      </div>
+
+      <!-- Quick Assistance Link for PTSP Inklusi -->
+      <div class="emergency-contact">
+        <p class="contact-note">
+          Membutuhkan layanan mendesak bagi penyandang disabilitas atau kelompok rentan?
+        </p>
+        <div class="contact-actions">
+          <a
+            href="https://wa.me/6285117491212?text=Halo%20Admin%20PTSP%20Kemenag%20Barito%20Utara,%20saya%20membutuhkan%20informasi%20layanan%20inklusi"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-whatsapp"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <span>Hubungi Hotline PTSP (+62 851-1749-1212)</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Pusdatin Official Footer -->
+      <div class="maintenance-footer">
+        &copy; 2026 Pusdatin Kemenag Barito Utara
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .maintenance-root {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8fafc;
+      overflow: hidden;
+      padding: 2rem 1.5rem;
+      box-sizing: border-box;
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+
+    /* Ambient Glowing Orbs */
+    .glow-orb {
+      position: absolute;
+      width: 18rem;
+      height: 18rem;
+      border-radius: 9999px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .glow-emerald {
+      top: 15%;
+      left: 15%;
+      background: rgba(16, 185, 129, 0.12);
+      filter: blur(80px);
+    }
+
+    .glow-blue {
+      bottom: 15%;
+      right: 15%;
+      background: rgba(59, 130, 246, 0.12);
+      filter: blur(80px);
+    }
+
+    .maintenance-container {
+      position: relative;
+      z-index: 10;
+      max-width: 680px;
+      width: 100%;
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    /* Header Badge */
+    .pusdatin-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 9999px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+    }
+
+    .pusdatin-badge-logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .pusdatin-badge-text {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.825rem;
+    }
+
+    .badge-title {
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-sub {
+      color: #059669;
+      font-weight: 600;
+    }
+
+    /* Icon Box */
+    .icon-wrapper {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .icon-card {
+      position: relative;
+      display: flex;
+      height: 6rem;
+      width: 6rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 1.25rem;
+      background-color: #ffffff;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+      border: 1px solid #f1f5f9;
+    }
+
+    .gear-icon {
+      animation: spin-slow 20s linear infinite;
+    }
+
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .wrench-badge {
+      position: absolute;
+      bottom: -0.5rem;
+      right: -0.5rem;
+      display: flex;
+      height: 2.5rem;
+      width: 2.5rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.75rem;
+      background-color: #2563eb;
+      box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+      border: 2px solid #ffffff;
+    }
+
+    /* Main Texts */
+    .main-title {
+      margin-bottom: 1rem;
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    @media (min-width: 640px) {
+      .main-title {
+        font-size: 2.75rem;
+      }
+    }
+
+    .main-desc {
+      margin-bottom: 2rem;
+      font-size: 1.05rem;
+      line-height: 1.65;
+      color: #475569;
+      max-width: 580px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .main-desc strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    /* Status Pills */
+    .pills-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 640px) {
+      .pills-row {
+        flex-direction: row;
+        gap: 1rem;
+      }
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 9999px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .pill-amber {
+      background-color: #fffbeb;
+      color: #b45309;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .pill-emerald {
+      background-color: #ecfdf5;
+      color: #047857;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    /* Real-Time Detection Pill */
+    .realtime-status-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 1.1rem;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #64748b;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .pulse-indicator {
+      position: relative;
+      display: flex;
+      width: 10px;
+      height: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 9999px;
+      background-color: #10b981;
+      opacity: 0.75;
+      animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    .pulse-dot {
+      position: relative;
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      background-color: #059669;
+    }
+
+    @keyframes ping {
+      75%, 100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    /* Emergency Contact */
+    .emergency-contact {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    .contact-note {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0 0 0.85rem 0;
+    }
+
+    .contact-actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: #0b6056;
+      color: #ffffff;
+      font-size: 0.875rem;
+      font-weight: 700;
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.65rem;
+      text-decoration: none;
+      transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-whatsapp:hover {
+      background-color: #084338;
+      transform: translateY(-1px);
+    }
+
+    /* Footer */
+    .maintenance-footer {
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+  </style>
+
+  <!-- Client-side Realtime Watcher (SSE Stream + Periodic Backup) -->
+  <script is:inline>
+    (function initMaintenanceWatcher() {
+      let isRedirecting = false;
+
+      function checkOnline(status) {
+        if (status === "online" && !isRedirecting) {
+          isRedirecting = true;
+          const syncText = document.getElementById("sync-text");
+          if (syncText) {
+            syncText.textContent = "Sistem sudah online! Mengalihkan ke beranda...";
+            syncText.style.color = "#059669";
+            syncText.style.fontWeight = "700";
+          }
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 800);
+        }
+      }
+
+      // 1. Connect to real-time Server-Sent Events stream
+      if (typeof window !== "undefined" && "EventSource" in window) {
+        try {
+          const sse = new EventSource("/api/apps/status/events");
+          sse.onmessage = function (event) {
+            try {
+              const data = JSON.parse(event.data);
+              if (data && data.status) {
+                checkOnline(data.status);
+              }
+            } catch (e) {}
+          };
+          sse.onerror = function () {
+            // Keep silent; fallback interval will cover any connection drop
+          };
+        } catch (e) {}
+      }
+
+      // 2. Adaptive backup polling (checks in-memory status every 6 seconds)
+      setInterval(async () => {
+        if (isRedirecting) return;
+        try {
+          const res = await fetch("/api/apps/status", { cache: "no-store" });
+          if (res.ok) {
+            const json = await res.json();
+            if (json && json.status) {
+              checkOnline(json.status);
+            }
+          }
+        } catch (e) {}
+      }, 6000);
+    })();
+  </script>
+</Layout>

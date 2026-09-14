@@ -1,0 +1,21 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.jsx";
+import Footer from "../../components/Footer.jsx";
+import PetaKantor from "../../components/PetaKantor.jsx";
+---
+<Layout>
+  <Navbar client:load />
+  <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--background-color)" }}>
+    <div style={{ flex: 1, padding: "120px 2rem 4rem", maxWidth: "1000px", margin: "0 auto", width: "100%" }}>
+      <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+        <h1 style={{ fontSize: "2.5rem", color: "var(--primary-color)", fontWeight: 800, marginBottom: "1rem" }}>Peta Denah Inklusif (Indoor Mapping)</h1>
+        <p style={{ color: "var(--text-light)", fontSize: "1.2rem", maxWidth: "800px", margin: "0 auto" }}>
+          Peta dua dimensi (2D) Kantor Kemenag Barito Utara. Klik pada area tertentu untuk melihat informasi rute dan fasilitas aksesibilitas.
+        </p>
+      </div>
+      <PetaKantor client:load />
+    </div>
+  </main>
+  <Footer client:load />
+</Layout>

@@ -14,14 +14,19 @@
 /coverage
 test-results/
 playwright-report/
+*_test.go
+*.test.*
+*.spec.*
 
-# next.js & build
-/.next/
-/out/
+
+# build & tooling
 /build
 dist/
 .cache/
 .turbo/
+backend/bin/
+backend/tmp/
+backend/build-errors.log
 
 # misc & OS
 .DS_Store
@@ -34,18 +39,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (di-inject dari Infisical)
 .env*
-.env.local
-.env*.local
-!.env.example
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # IDE & Editor settings
 .vscode/

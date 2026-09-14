@@ -1,25 +1,28 @@
 {
-  "name": "inklusi_kemenag",
-  "version": "0.1.0",
+  "name": "inklusi-kemenag",
+  "version": "2.0.0",
   "private": true,
+  "description": "Monorepo Layanan Inklusi Kemenag Barito Utara - Astro V7 (FE) + Go Fiber (BE)",
+  "workspaces": [
+    "frontend/apps/*",
+    "frontend/packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@marsidev/react-turnstile": "^1.5.3",
-    "@supabase/ssr": "^0.12.0",
-    "@supabase/supabase-js": "^2.108.2",
-    "lucide-react": "^1.21.0",
-    "next": "16.2.9",
-    "pg": "^8.22.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "install:all": "npm install && cd backend && go mod download",
+    "dev": "infisical run --env=dev --path=/inklusi-kemenag -- concurrently -n be,fe -c yellow,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:prod-env": "infisical run --env=prod --path=/inklusi-kemenag -- concurrently -n be,fe -c yellow,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace @inklusi/web",
+    "dev:backend": "cd backend && go run github.com/air-verse/air@latest -c .air.toml",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm run build --workspace @inklusi/web",
+    "build:web": "npm run build --workspace @inklusi/web",
+    "build:backend": "cd backend && go build -o bin/server ./cmd/server",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:backend": "cd backend && go vet ./...",
+    "secrets:dev": "infisical secrets --env=dev --path=/inklusi-kemenag",
+    "secrets:prod": "infisical secrets --env=prod --path=/inklusi-kemenag"
   },
   "devDependencies": {
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9"
+    "concurrently": "^10.0.5"
   }
 }

@@ -1,0 +1,32 @@
+---
+import { AppWidgets } from "@inklusi/ui";
+import "@fontsource-variable/plus-jakarta-sans";
+import "../styles/global.css";
+---
+
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <title>Layanan Inklusi Kemenag Barito Utara</title>
+    <meta
+      name="description"
+      content="Portal Layanan Inklusi Kementerian Agama Kabupaten Barito Utara"
+    />
+    <!-- Google Fonts API: 1 Global Font (Plus Jakarta Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <slot />
+    <AppWidgets client:only="react" />
+  </body>
+</html>

@@ -1,0 +1,43 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.jsx";
+import Footer from "../components/Footer.jsx";
+import { publicFetch, type Dokumen } from "../lib/api";
+
+let dokumen: Dokumen[] = [];
+try {
+  dokumen = await publicFetch<Dokumen[]>("/api/public/dokumen");
+} catch (e) {
+  console.error("Gagal memuat dokumen:", e);
+}
+---
+<Layout>
+  <Navbar client:load />
+  <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#f9fafb" }}>
+    <div class="container" style={{ padding: "3rem 1rem 5rem" }}>
+      <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+        <h1 style={{ fontSize: "2.5rem", color: "#0b6056", fontWeight: 800, marginBottom: "1rem" }}>Standar Pelayanan & Dokumen</h1>
+        <p style={{ color: "#4b5563", fontSize: "1.1rem", maxWidth: "600px", margin: "0 auto" }}>Unduh pedoman, Standar Operasional Prosedur (SOP), dan panduan Layanan Inklusi kami.</p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "2rem" }}>
+        {dokumen.length > 0 ? (
+          dokumen.map((doc) => (
+            <div style={{ background: "white", borderRadius: "16px", padding: "2rem", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <h3 style={{ fontSize: "1.15rem", color: "#111827", fontWeight: 700, marginBottom: "0.5rem" }}>{doc.judul}</h3>
+              <span style={{ fontSize: "0.85rem", color: "#6b7280", fontWeight: 600, padding: "0.25rem 0.75rem", background: "#f3f4f6", borderRadius: "99px", marginBottom: "1.5rem" }}>Format: {doc.jenis}</span>
+              <a href={doc.url_file} target="_blank" rel="noreferrer" style={{ marginTop: "auto", background: "#0b6056", color: "white", padding: "0.75rem 1.5rem", borderRadius: "8px", fontWeight: 600, textDecoration: "none", width: "100%" }}>
+                Unduh Dokumen
+              </a>
+            </div>
+          ))
+        ) : (
+          <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "4rem 0", color: "#6b7280", background: "white", borderRadius: "16px", border: "1px dashed #d1d5db" }}>
+            <p>Belum ada dokumen standar layanan.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </main>
+  <Footer client:load />
+</Layout>

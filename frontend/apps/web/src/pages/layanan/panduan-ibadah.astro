@@ -1,0 +1,21 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.jsx";
+import Footer from "../../components/Footer.jsx";
+import PanduanIbadah from "../../components/PanduanIbadah.jsx";
+---
+<Layout>
+  <Navbar client:load />
+  <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--background-color)" }}>
+    <div style={{ flex: 1, padding: "120px 2rem 4rem", maxWidth: "1000px", margin: "0 auto", width: "100%" }}>
+      <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+        <h1 style={{ fontSize: "2.5rem", color: "var(--primary-color)", fontWeight: 800, marginBottom: "1rem" }}>Video Panduan Ibadah (Audio Description)</h1>
+        <p style={{ color: "var(--text-light)", fontSize: "1.2rem", maxWidth: "800px", margin: "0 auto" }}>
+          Layanan video panduan ibadah (seperti manasik haji) yang dilengkapi dengan Deskripsi Audio khusus bagi sahabat tuna netra.
+        </p>
+      </div>
+      <PanduanIbadah client:load />
+    </div>
+  </main>
+  <Footer client:load />
+</Layout>

@@ -1,0 +1,53 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.jsx";
+import Footer from "../components/Footer.jsx";
+import { publicFetch, type Berita } from "../lib/api";
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
+let berita: Berita[] = [];
+try {
+  berita = await publicFetch<Berita[]>("/api/public/berita");
+} catch (e) {
+  console.error("Gagal memuat berita:", e);
+}
+---
+
+<Layout>
+  <Navbar client:load />
+  <main style={{ minHeight: "100vh", backgroundColor: "var(--background-color)" }}>
+    <div class="container" style={{ padding: "3rem 1rem 5rem" }}>
+      <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+        <h1 style={{ fontSize: "2.5rem", color: "#0b6056", fontWeight: 800, marginBottom: "1rem" }}>Berita & Kegiatan</h1>
+        <p style={{ color: "#4b5563", fontSize: "1.1rem" }}>Informasi terbaru seputar layanan inklusi Kementerian Agama Kabupaten Barito Utara.</p>
+      </div>
+
+      {berita.length > 0 ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "2rem" }}>
+          {berita.map((item) => (
+            <a href={`/berita/${item.slug}`} style={{ background: "white", borderRadius: "16px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column" }}>
+              {item.thumbnail && (
+                <div style={{ width: "100%", height: "180px", overflow: "hidden" }}>
+                  <img src={item.thumbnail} alt={item.judul} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                </div>
+              )}
+              <div style={{ padding: "1.5rem", flex: 1, display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "0.875rem", color: "#d97706", fontWeight: 600, marginBottom: "0.5rem", display: "block" }}>{formatDate(item.tanggal)}</span>
+                <h3 style={{ fontSize: "1.1rem", color: "#111827", fontWeight: 700, marginBottom: "0.75rem" }}>{item.judul}</h3>
+                <span style={{ color: "#0b6056", fontWeight: 600, marginTop: "auto" }}>Baca Selengkapnya &rarr;</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p style={{ textAlign: "center", color: "#6b7280" }}>Belum ada data berita.</p>
+      )}
+    </div>
+  </main>
+  <Footer client:load />
+</Layout>

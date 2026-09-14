@@ -1,0 +1,190 @@
+---
+import { ShieldCheck, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+---
+
+<section style={{
+  background: "linear-gradient(135deg, #0b6056 0%, #084338 100%)",
+  color: "#ffffff",
+  padding: "4.5rem 0 3.5rem",
+  position: "relative",
+  overflow: "hidden"
+}}>
+  {/* Subtle Background Pattern */}
+  <div style={{
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundImage: "radial-gradient(circle at 85% 20%, rgba(247, 168, 27, 0.12) 0%, transparent 50%), radial-gradient(circle at 15% 85%, rgba(255, 255, 255, 0.05) 0%, transparent 45%)",
+    pointerEvents: "none"
+  }}></div>
+
+  <div class="container" style={{ position: "relative", zIndex: 2 }}>
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+      gap: "3.5rem",
+      alignItems: "center"
+    }}>
+      {/* Left Column: Hero Content */}
+      <div>
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          backgroundColor: "rgba(255, 255, 255, 0.12)",
+          backdropFilter: "blur(8px)",
+          padding: "6px 16px",
+          borderRadius: "9999px",
+          fontSize: "0.825rem",
+          fontWeight: 700,
+          letterSpacing: "0.6px",
+          marginBottom: "1.25rem",
+          border: "1px solid rgba(255, 255, 255, 0.2)"
+        }}>
+          <ShieldCheck size={16} style={{ color: "var(--secondary-color)" }} />
+          <span>PORTAL RESMI LAYANAN INKLUSI KEMENAG BARITO UTARA</span>
+        </div>
+
+        <h1 style={{
+          fontSize: "clamp(2rem, 3.5vw, 3.25rem)",
+          fontWeight: 800,
+          lineHeight: 1.2,
+          marginBottom: "1.25rem",
+          letterSpacing: "-0.5px"
+        }}>
+          Pelayanan Keagamaan Ramah, Setara & Bermartabat
+        </h1>
+
+        <p style={{
+          fontSize: "1.1rem",
+          lineHeight: 1.7,
+          color: "#e2e8f0",
+          marginBottom: "2.25rem",
+          maxWidth: "680px"
+        }}>
+          Pusat aksesibilitas dan pendampingan terpadu bagi penyandang disabilitas, lansia, ibu hamil, menyusui, serta kelompok rentan di Kabupaten Barito Utara. Semua layanan gratis dan bebas diskriminasi.
+        </p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "center" }}>
+          <a
+            href="/formulir"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              backgroundColor: "var(--secondary-color)",
+              color: "#111827",
+              fontWeight: 800,
+              fontSize: "0.95rem",
+              padding: "14px 26px",
+              borderRadius: "50px",
+              textDecoration: "none",
+              boxShadow: "0 6px 20px rgba(247, 168, 27, 0.35)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span>Identifikasi Kebutuhan Rentan</span>
+            <ArrowRight size={18} />
+          </a>
+
+          <a
+            href="/booking"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              color: "#ffffff",
+              fontWeight: 700,
+              fontSize: "0.95rem",
+              padding: "13px 24px",
+              borderRadius: "50px",
+              textDecoration: "none",
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+              backdropFilter: "blur(6px)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <span>Antrean Prioritas PTSP</span>
+          </a>
+
+          <a
+            href="/standar-layanan"
+            style={{
+              color: "var(--secondary-color)",
+              fontWeight: 700,
+              fontSize: "0.95rem",
+              textDecoration: "underline",
+              textUnderlineOffset: "4px",
+              marginLeft: "0.5rem"
+            }}
+          >
+            Standar Pelayanan &rarr;
+          </a>
+        </div>
+      </div>
+
+      {/* Right Column: Key Commitments Card */}
+      <div>
+        <div style={{
+          backgroundColor: "rgba(255, 255, 255, 0.08)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          border: "1px solid rgba(255, 255, 255, 0.18)",
+          borderRadius: "20px",
+          padding: "2rem",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.25rem", borderBottom: "1px solid rgba(255, 255, 255, 0.15)", paddingBottom: "1rem" }}>
+            <Sparkles size={22} style={{ color: "var(--secondary-color)" }} />
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0 }}>4 Standar Fasilitas & Inklusi</h3>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                <CheckCircle2 size={18} style={{ color: "#ffffff" }} />
+              </div>
+              <div>
+                <strong style={{ fontSize: "0.95rem", display: "block", color: "#ffffff" }}>Jalur Akses Guiding Block & Ramp</strong>
+                <span style={{ fontSize: "0.85rem", color: "#cbd5e1" }}>Kemudahan mobilitas kursi roda dan penyandang tunanetra di kantor PTSP.</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                <CheckCircle2 size={18} style={{ color: "#ffffff" }} />
+              </div>
+              <div>
+                <strong style={{ fontSize: "0.95rem", display: "block", color: "#ffffff" }}>Petugas Bersertifikat Bahasa Isyarat (BISINDO)</strong>
+                <span style={{ fontSize: "0.85rem", color: "#cbd5e1" }}>Pendampingan komunikasi khusus bagi warga tunarungu dan tunawicara.</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                <CheckCircle2 size={18} style={{ color: "#ffffff" }} />
+              </div>
+              <div>
+                <strong style={{ fontSize: "0.95rem", display: "block", color: "#ffffff" }}>Layanan Antar-Jemput / Jemput Bola</strong>
+                <span style={{ fontSize: "0.85rem", color: "#cbd5e1" }}>Petugas mendatangi langsung pemohon berkebutuhan khusus di pelosok Barito Utara.</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px" }}>
+                <CheckCircle2 size={18} style={{ color: "#ffffff" }} />
+              </div>
+              <div>
+                <strong style={{ fontSize: "0.95rem", display: "block", color: "#ffffff" }}>Pojok Literasi Audio & Ruang Laktasi</strong>
+                <span style={{ fontSize: "0.85rem", color: "#cbd5e1" }}>Al-Qur'an audio, buku panduan ramah disabilitas, dan ruang nyaman untuk ibu menyusui.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

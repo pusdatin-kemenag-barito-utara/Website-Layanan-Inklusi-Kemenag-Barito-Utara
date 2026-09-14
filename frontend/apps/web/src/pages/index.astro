@@ -1,0 +1,47 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.jsx";
+import Footer from "../components/Footer.jsx";
+import JadwalSholat from "../components/JadwalSholat.jsx";
+import HeroSection from "../components/home/HeroSection.astro";
+import PillarsSection from "../components/home/PillarsSection.astro";
+import NewsSection from "../components/home/NewsSection.astro";
+import DocumentsSection from "../components/home/DocumentsSection.astro";
+import HotlineBanner from "../components/home/HotlineBanner.astro";
+import { publicFetch, type Berita, type Dokumen } from "../lib/api";
+
+let berita: Berita[] = [];
+let dokumen: Dokumen[] = [];
+
+try {
+  berita = await publicFetch<Berita[]>("/api/public/berita");
+} catch (e) {
+  console.error("Gagal memuat berita:", e);
+}
+
+try {
+  dokumen = await publicFetch<Dokumen[]>("/api/public/dokumen");
+} catch (e) {
+  console.error("Gagal memuat dokumen:", e);
+}
+---
+
+<Layout>
+  <Navbar client:load />
+
+  <main style={{ minHeight: "100vh", backgroundColor: "var(--background-color)" }}>
+    <HeroSection />
+
+    {/* JADWAL SHOLAT - 95% FULL WIDTH */}
+    <div class="container" style={{ marginTop: "-1.5rem", position: "relative", zIndex: 10 }}>
+      <JadwalSholat client:load />
+    </div>
+
+    <PillarsSection />
+    <NewsSection berita={berita} />
+    <DocumentsSection dokumen={dokumen} />
+    <HotlineBanner />
+  </main>
+
+  <Footer client:load />
+</Layout>

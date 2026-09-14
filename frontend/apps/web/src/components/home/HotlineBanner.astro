@@ -1,0 +1,73 @@
+---
+import { PhoneCall } from "lucide-react";
+---
+
+<section class="container" style={{ paddingBottom: "5rem" }}>
+  <div style={{
+    background: "linear-gradient(135deg, #0b6056 0%, #06352c 100%)",
+    borderRadius: "20px",
+    padding: "2.5rem 3rem",
+    color: "#ffffff",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "2rem",
+    boxShadow: "0 12px 35px -6px rgba(11, 96, 86, 0.25)"
+  }}>
+    <div style={{ maxWidth: "680px" }}>
+      <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--secondary-color)", letterSpacing: "1px", textTransform: "uppercase", display: "block", marginBottom: "0.5rem" }}>
+        Layanan Pengaduan & Konsultasi Langsung
+      </span>
+      <h3 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.5rem", letterSpacing: "-0.5px" }}>
+        Butuh Bantuan Aksesibilitas Khusus?
+      </h3>
+      <p style={{ color: "#e2e8f0", fontSize: "1rem", lineHeight: 1.6 }}>
+        Tim Pendamping Inklusi PTSP Kemenag Barito Utara siap melayani pertanyaan, permohonan pendampingan, atau pengaduan fasilitas kelompok rentan.
+      </p>
+    </div>
+
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+      <a
+        href="https://wa.me/6285117491212?text=Halo%20Admin%20Layanan%20Inklusi%20Kemenag%20Barito%20Utara,%20saya%20memerlukan%20bantuan%20layanan..."
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          backgroundColor: "#ffffff",
+          color: "var(--primary-color)",
+          padding: "12px 24px",
+          borderRadius: "50px",
+          fontWeight: 800,
+          fontSize: "0.95rem",
+          textDecoration: "none",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.15)"
+        }}
+      >
+        <PhoneCall size={18} />
+        <span>WhatsApp PTSP: 0851-1749-1212</span>
+      </a>
+
+      <a
+        href="/pengaduan"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          backgroundColor: "rgba(255, 255, 255, 0.12)",
+          color: "#ffffff",
+          padding: "12px 22px",
+          borderRadius: "50px",
+          fontWeight: 700,
+          fontSize: "0.95rem",
+          textDecoration: "none",
+          border: "1px solid rgba(255, 255, 255, 0.3)"
+        }}
+      >
+        <span>Form Pengaduan</span>
+      </a>
+    </div>
+  </div>
+</section>

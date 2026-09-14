@@ -1,0 +1,49 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.jsx";
+import Footer from "../../components/Footer.jsx";
+import { publicFetch, type Berita } from "../../lib/api";
+
+export const prerender = false;
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
+const { slug } = Astro.params;
+let berita: Berita | null = null;
+try {
+  berita = await publicFetch<Berita>(`/api/public/berita/${slug}`);
+} catch (e) {
+  console.error("Gagal memuat berita:", e);
+}
+---
+
+<Layout>
+  <Navbar client:load />
+  <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#f9fafb" }}>
+    <div style={{ flex: 1, padding: "120px 2rem 4rem", maxWidth: "800px", margin: "0 auto", width: "100%" }}>
+      {berita ? (
+        <article style={{ background: "white", borderRadius: "16px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", padding: "2.5rem" }}>
+          <a href="/berita" style={{ color: "#0b6056", textDecoration: "none", display: "inline-block", marginBottom: "2rem", fontWeight: 500 }}>&larr; Kembali ke Daftar Berita</a>
+          <span style={{ fontSize: "0.95rem", color: "#d97706", fontWeight: 600, marginBottom: "1rem", display: "block" }}>{formatDate(berita.tanggal)}</span>
+          <h1 style={{ fontSize: "2.5rem", color: "#111827", fontWeight: 800, marginBottom: "2rem", lineHeight: 1.2 }}>{berita.judul}</h1>
+          {berita.thumbnail && (
+            <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", marginBottom: "2.5rem" }}>
+              <img src={berita.thumbnail} alt={berita.judul} style={{ width: "100%", height: "auto", display: "block", maxHeight: "450px", objectFit: "cover" }} />
+            </div>
+          )}
+          <div style={{ color: "#4b5563", fontSize: "1rem", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{berita.konten}</div>
+        </article>
+      ) : (
+        <div style={{ textAlign: "center" }}>
+          <h1>Berita Tidak Ditemukan</h1>
+          <a href="/berita" style={{ color: "#0b6056", marginTop: "1rem", display: "inline-block" }}>&larr; Kembali ke Daftar Berita</a>
+        </div>
+      )}
+    </div>
+  </main>
+  <Footer client:load />
+</Layout>
