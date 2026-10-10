@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs_24", "go"]
+
+[phases.install]
+cmds = [
+  "npm install",
+  "cd backend && go mod download"
+]
+
+[phases.build]
+cmds = [
+  "npm run build:frontend",
+  "cd backend && go build -o bin/server ./cmd/server"
+]
+
+[start]
+cmd = "npx concurrently -n be,fe -c yellow,cyan \"./backend/bin/server\" \"node frontend/apps/web/dist/server/entry.mjs\""

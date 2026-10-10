@@ -17,10 +17,14 @@
     "build:frontend": "npm run build --workspace @inklusi/web",
     "build:web": "npm run build --workspace @inklusi/web",
     "build:backend": "cd backend && go build -o bin/server ./cmd/server",
+    "start": "concurrently -n be,fe -c yellow,cyan \"./backend/bin/server\" \"node frontend/apps/web/dist/server/entry.mjs\"",
     "lint": "npm run lint --workspaces --if-present",
     "lint:backend": "cd backend && go vet ./...",
     "secrets:dev": "infisical secrets --env=dev --path=/inklusi-kemenag",
     "secrets:prod": "infisical secrets --env=prod --path=/inklusi-kemenag"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
