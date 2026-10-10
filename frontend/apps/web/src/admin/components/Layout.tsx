@@ -18,12 +18,15 @@ export default function Layout() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL ?? ""}/api/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => {});
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL ?? ""}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {}
     localStorage.removeItem("inklusi_token");
-    navigate("/admin/login");
+    // Hard replacement of history entry to prevent back-button restoration
+    window.location.replace("/admin/login");
   };
 
   return (

@@ -1,8 +1,9 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5"
 	"github.com/kemenag/inklusi-backend/internal/content"
 )
 
@@ -64,7 +65,7 @@ func (h *AdminHandler) Update(c fiber.Ctx) error {
 	}
 	row, err := h.repo.Update(c.Context(), c.Params("table"), id, fields)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, content.ErrNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
 		}
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "update failed: " + err.Error()})

@@ -4,17 +4,16 @@ import "os"
 
 // Config holds all runtime configuration for the backend service.
 type Config struct {
-	Port               string
-	DatabaseURL        string
-	SupabaseURL        string
-	SupabaseAnonKey    string
-	SupabaseServiceKey string
-	TurnstileSecret    string
-	PusdatinURL        string
-	AppID              string
-	SessionCookieName  string
-	SessionCookieSecure bool
-	CORSOrigins        string
+	Port                    string
+	PocketBaseURL           string
+	PocketBaseAdminEmail    string
+	PocketBaseAdminPassword string
+	TurnstileSecret         string
+	PusdatinURL             string
+	AppID                   string
+	SessionCookieName       string
+	SessionCookieSecure     bool
+	CORSOrigins             string
 }
 
 // Load reads configuration from environment variables with sensible defaults.
@@ -33,17 +32,16 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:                port,
-		DatabaseURL:         os.Getenv("DATABASE_URL"),
-		SupabaseURL:         getEnv("SUPABASE_URL", os.Getenv("NEXT_PUBLIC_SUPABASE_URL")),
-		SupabaseAnonKey:     getEnv("SUPABASE_ANON_KEY", os.Getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")),
-		SupabaseServiceKey:  os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
-		TurnstileSecret:     getEnv("TURNSTILE_SECRET_KEY", os.Getenv("TURNSTILE_SECRET")),
-		PusdatinURL:         getEnv("PUSDATIN_URL", getEnv("NEXT_PUBLIC_PUSDATIN_URL", "https://pusdatin.kemenag-baritoutara.com")),
-		AppID:               getEnv("APP_ID", "inklusi_kemenag"),
-		SessionCookieName:   getEnv("SESSION_COOKIE_NAME", "inklusi-auth"),
-		SessionCookieSecure: getEnv("SESSION_COOKIE_SECURE", "true") == "true",
-		CORSOrigins:         getEnv("CORS_ORIGINS", "http://localhost:3030,http://127.0.0.1:3030"),
+		Port:                    port,
+		PocketBaseURL:           getEnv("POCKETBASE_URL", "https://db-inklusi.kemenag-baritoutara.com"),
+		PocketBaseAdminEmail:    getEnv("POCKETBASE_ADMIN_EMAIL", ""),
+		PocketBaseAdminPassword: getEnv("POCKETBASE_ADMIN_PASSWORD", ""),
+		TurnstileSecret:         getEnv("TURNSTILE_SECRET_KEY", os.Getenv("TURNSTILE_SECRET")),
+		PusdatinURL:             getEnv("PUSDATIN_URL", getEnv("NEXT_PUBLIC_PUSDATIN_URL", "https://pusdatin.kemenag-baritoutara.com")),
+		AppID:                   getEnv("APP_ID", "inklusi_kemenag"),
+		SessionCookieName:       getEnv("SESSION_COOKIE_NAME", "inklusi-auth"),
+		SessionCookieSecure:     getEnv("SESSION_COOKIE_SECURE", "true") == "true",
+		CORSOrigins:             getEnv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"),
 	}
 }
 

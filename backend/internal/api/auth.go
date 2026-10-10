@@ -1,16 +1,18 @@
 package api
 
 import (
-	"errors"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/kemenag/inklusi-backend/internal/auth"
 	"github.com/kemenag/inklusi-backend/internal/middleware"
-	"github.com/kemenag/inklusi-backend/internal/rbac"
 	"github.com/kemenag/inklusi-backend/internal/security"
 )
+
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
 // loginRequest is the payload for POST /api/auth/login.
 type loginRequest struct {
@@ -20,7 +22,17 @@ type loginRequest struct {
 }
 
 func registerAuthRoutes(g fiber.Router, deps *Dependencies) {
-	g.Post("/auth/login", deps.login)
+	loginLimiter := limiter.New(limiter.Config{
+		Max:        5,
+		Expiration: 1 * time.Minute,
+		LimitReached: func(c fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "Terlalu banyak percobaan masuk. Mohon tunggu 1 menit demi keamanan sistem.",
+			})
+		},
+	})
+
+	g.Post("/auth/login", loginLimiter, deps.login)
 	g.Post("/auth/logout", deps.logout)
 	g.Get("/auth/me", requireAuth(deps), deps.me)
 }
@@ -38,19 +50,27 @@ func (d *Dependencies) me(c fiber.Ctx) error {
 	})
 }
 
-// login authenticates the user against Supabase Auth, validates RBAC, and issues a session cookie.
+// login authenticates the user against PocketBase Auth, validates role, and issues a session cookie.
 func (d *Dependencies) login(c fiber.Ctx) error {
 	var req loginRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
 	}
 
-	if req.TurnstileToken == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Verifikasi keamanan diperlukan"})
+	// 1. Sanitize and validate input against injection & XSS
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	if len(req.Email) < 5 || len(req.Email) > 100 || !emailRegex.MatchString(req.Email) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Format email tidak valid atau tidak diizinkan"})
+	}
+	if len(req.Password) == 0 || len(req.Password) > 128 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Kata sandi tidak valid"})
 	}
 
-	// 1. Verify Turnstile server-side
+	// 2. Verify Turnstile server-side if configured in environment
 	if d.Config.TurnstileSecret != "" {
+		if req.TurnstileToken == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Verifikasi keamanan diperlukan"})
+		}
 		ok, err := security.VerifyTurnstile(d.Config.TurnstileSecret, req.TurnstileToken, c.IP())
 		if err != nil {
 			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"error": "Terjadi kesalahan sistem saat memverifikasi keamanan"})
@@ -60,33 +80,19 @@ func (d *Dependencies) login(c fiber.Ctx) error {
 		}
 	}
 
-	// 2. Supabase Auth sign-in
-	supaUser, err := auth.SignInWithPassword(d.Config.SupabaseURL, d.Config.SupabaseAnonKey, req.Email, req.Password)
+	// 2. PocketBase Auth sign-in
+	pbAuth, err := d.PB.AuthWithPassword(c.Context(), "users", req.Email, req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Email atau password salah"})
 	}
 
-	// 3. RBAC check against central pusdatin schema
-	rbacSvc := rbac.New(d.DB, d.Config.AppID)
-	pu, err := rbacSvc.LookupUser(c.Context(), supaUser.Email)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Akun tidak ditemukan di sistem pusat."})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Terjadi kesalahan sistem saat mengecek akses."})
+	role := pbAuth.Record.Role
+	if role == "" {
+		role = "user"
 	}
 
-	role := pu.Role
-	if role != "super_admin" {
-		perm, err := rbacSvc.LookupAppPermission(c.Context(), pu.ID)
-		if err != nil || perm == "none" {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Akun Anda tidak memiliki akses ke aplikasi Pusat Layanan Inklusi."})
-		}
-		role = perm
-	}
-
-	// 4. Issue session JWT + cookie
-	token, err := auth.GenerateToken(pu.ID, supaUser.Email, role, 24*time.Hour)
+	// 3. Issue session JWT + cookie
+	token, err := auth.GenerateToken(pbAuth.Record.ID, pbAuth.Record.Email, role, 24*time.Hour)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create session"})
 	}
@@ -104,8 +110,18 @@ func (d *Dependencies) login(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "role": role})
 }
 
-// logout clears the session cookie.
+// logout clears the session cookie permanently from the browser.
 func (d *Dependencies) logout(c fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name:     d.Config.SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		HTTPOnly: true,
+		Secure:   d.Config.SessionCookieSecure,
+		SameSite: fiber.CookieSameSiteLaxMode,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+	})
 	c.ClearCookie(d.Config.SessionCookieName)
 	return c.JSON(fiber.Map{"success": true})
 }

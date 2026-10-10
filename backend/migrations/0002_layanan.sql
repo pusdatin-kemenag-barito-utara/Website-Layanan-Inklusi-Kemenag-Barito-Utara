@@ -1,5 +1,5 @@
 -- Fase 3: tabel layanan publik (booking, pengaduan, formulir identifikasi, tracking berkas)
--- Jalankan di Supabase SQL Editor pada schema kemenag_inklusi.
+-- Skema legacy kemenag_inklusi (telah dimigrasikan ke PocketBase collections).
 
 CREATE TABLE IF NOT EXISTS kemenag_inklusi.booking_prioritas (
     id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

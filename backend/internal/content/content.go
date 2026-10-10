@@ -4,27 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/kemenag/inklusi-backend/internal/pocketbase"
 )
 
-// Repository provides typed access to CMS content tables.
+// ErrNotFound indicates a record was not found in PocketBase.
+var ErrNotFound = pocketbase.ErrNotFound
+
+// Repository provides typed access to CMS content collections backed by PocketBase.
 type Repository struct {
-	pool   *pgxpool.Pool
-	schema string
+	pb *pocketbase.Client
 }
 
-// NewRepository creates a content repository bound to the kemenag_inklusi schema.
-func NewRepository(pool *pgxpool.Pool) *Repository {
-	return &Repository{pool: pool, schema: "kemenag_inklusi"}
+// NewRepository creates a content repository bound to PocketBase.
+func NewRepository(pb *pocketbase.Client) *Repository {
+	return &Repository{pb: pb}
 }
 
-// allowedTables whitelist prevents SQL injection via arbitrary table names.
+// allowedTables whitelist prevents unauthorized collection queries.
 var allowedTables = map[string]bool{
 	"berita":                true,
 	"pengumuman":            true,
@@ -41,44 +38,82 @@ func (r *Repository) tableOK(table string) bool {
 	return allowedTables[table]
 }
 
-// List returns all rows for a content table ordered by created_at desc.
+func sortForTable(table string) string {
+	switch table {
+	case "agenda":
+		return "-waktu,-created"
+	case "berita", "dokumen", "galeri", "pengumuman":
+		return "-tanggal,-created"
+	default:
+		return "-created"
+	}
+}
+
+func normalizeRecord(rec map[string]interface{}) map[string]interface{} {
+	if rec == nil {
+		return nil
+	}
+	// Fallback created_at to created, or tanggal, or waktu
+	if _, ok := rec["created_at"]; !ok {
+		if c, ok := rec["created"]; ok && c != "" {
+			rec["created_at"] = c
+		} else if t, ok := rec["tanggal"]; ok && t != "" {
+			rec["created_at"] = t
+		} else if w, ok := rec["waktu"]; ok && w != "" {
+			rec["created_at"] = w
+		}
+	}
+	if _, ok := rec["updated_at"]; !ok {
+		if u, ok := rec["updated"]; ok && u != "" {
+			rec["updated_at"] = u
+		} else if t, ok := rec["tanggal"]; ok && t != "" {
+			rec["updated_at"] = t
+		}
+	}
+	return rec
+}
+
+// List returns all rows for a content table ordered by date/created desc.
 func (r *Repository) List(ctx context.Context, table string) ([]map[string]interface{}, error) {
 	if !r.tableOK(table) {
 		return nil, errors.New("table not allowed")
 	}
-	q := "SELECT * FROM " + r.schema + "." + table + " ORDER BY created_at DESC"
-	rows, err := r.pool.Query(ctx, q)
+	items, _, err := r.pb.ListRecords(ctx, table, "", sortForTable(table), 1, 500)
 	if err != nil {
 		return nil, err
 	}
-	return collect(rows)
+	for i := range items {
+		items[i] = normalizeRecord(items[i])
+	}
+	return items, nil
 }
 
-// ListActive returns rows filtered by status ordered by created_at desc.
+// ListActive returns rows filtered by status ordered by date/created desc.
 func (r *Repository) ListActive(ctx context.Context, table, status string) ([]map[string]interface{}, error) {
 	if !r.tableOK(table) {
 		return nil, errors.New("table not allowed")
 	}
-	q := "SELECT * FROM " + r.schema + "." + table + " WHERE status = $1 ORDER BY created_at DESC"
-	rows, err := r.pool.Query(ctx, q, status)
+	filter := fmt.Sprintf("status='%s'", status)
+	items, _, err := r.pb.ListRecords(ctx, table, filter, sortForTable(table), 1, 500)
 	if err != nil {
 		return nil, err
 	}
-	return collect(rows)
+	for i := range items {
+		items[i] = normalizeRecord(items[i])
+	}
+	return items, nil
 }
 
 // ByID returns a single row by primary key id.
-// ByID returns a single row by primary key id (works with uuid or integer id).
 func (r *Repository) ByID(ctx context.Context, table string, id string) (map[string]interface{}, error) {
 	if !r.tableOK(table) {
 		return nil, errors.New("table not allowed")
 	}
-	q := "SELECT * FROM " + r.schema + "." + table + " WHERE id::text = $1 LIMIT 1"
-	rows, err := r.pool.Query(ctx, q, id)
+	rec, err := r.pb.GetRecord(ctx, table, id)
 	if err != nil {
 		return nil, err
 	}
-	return first(rows)
+	return normalizeRecord(rec), nil
 }
 
 // BySlug returns a single row by its slug column.
@@ -86,117 +121,51 @@ func (r *Repository) BySlug(ctx context.Context, table, slug string) (map[string
 	if !r.tableOK(table) {
 		return nil, errors.New("table not allowed")
 	}
-	q := "SELECT * FROM " + r.schema + "." + table + " WHERE slug = $1 LIMIT 1"
-	rows, err := r.pool.Query(ctx, q, slug)
+	filter := fmt.Sprintf("slug='%s'", slug)
+	items, _, err := r.pb.ListRecords(ctx, table, filter, "", 1, 1)
 	if err != nil {
 		return nil, err
 	}
-	return first(rows)
+	if len(items) == 0 {
+		return nil, ErrNotFound
+	}
+	return normalizeRecord(items[0]), nil
 }
 
-// Insert creates a row from an arbitrary field set.
+// Insert creates a row in the PocketBase collection.
 func (r *Repository) Insert(ctx context.Context, table string, fields map[string]interface{}) (map[string]interface{}, error) {
 	if !r.tableOK(table) {
 		return nil, errors.New("table not allowed")
 	}
 	delete(fields, "id")
-
-	cols := make([]string, 0, len(fields))
-	params := make([]interface{}, 0, len(fields))
-	for k, v := range fields {
-		cols = append(cols, k)
-		params = append(params, v)
-	}
-	placeholders := make([]string, len(cols))
-	for j := range cols {
-		placeholders[j] = "$" + strconv.Itoa(j+1)
-	}
-
-	q := "INSERT INTO " + r.schema + "." + table +
-		" (" + strings.Join(cols, ", ") + ") VALUES (" + strings.Join(placeholders, ", ") + ") RETURNING *"
-
-	rows, err := r.pool.Query(ctx, q, params...)
+	rec, err := r.pb.CreateRecord(ctx, table, fields)
 	if err != nil {
 		return nil, err
 	}
-	return first(rows)
+	return normalizeRecord(rec), nil
 }
 
-// Update modifies a row's fields by id (works with uuid or integer id).
+// Update modifies a row's fields by id.
 func (r *Repository) Update(ctx context.Context, table string, id string, fields map[string]interface{}) (map[string]interface{}, error) {
 	if !r.tableOK(table) {
 		return nil, errors.New("table not allowed")
 	}
 	delete(fields, "id")
-
-	if len(fields) == 0 {
-		return r.ByID(ctx, table, id)
-	}
-
-	sets := make([]string, 0, len(fields))
-	params := make([]interface{}, 0, len(fields)+1)
-	i := 1
-	for k, v := range fields {
-		sets = append(sets, k+" = $"+strconv.Itoa(i))
-		params = append(params, v)
-		i++
-	}
-	params = append(params, id)
-
-	q := "UPDATE " + r.schema + "." + table + " SET " + strings.Join(sets, ", ") +
-		" WHERE id::text = $" + strconv.Itoa(len(params)) + " RETURNING *"
-
-	rows, err := r.pool.Query(ctx, q, params...)
+	rec, err := r.pb.UpdateRecord(ctx, table, id, fields)
 	if err != nil {
 		return nil, err
 	}
-	return first(rows)
+	return normalizeRecord(rec), nil
 }
 
-// Delete removes a row by id (works with uuid or integer id).
+// Delete removes a row by id.
 func (r *Repository) Delete(ctx context.Context, table string, id string) error {
 	if !r.tableOK(table) {
 		return errors.New("table not allowed")
 	}
-	q := "DELETE FROM " + r.schema + "." + table + " WHERE id::text = $1"
-	_, err := r.pool.Exec(ctx, q, id)
+	err := r.pb.DeleteRecord(ctx, table, id)
+	if err != nil && errors.Is(err, pocketbase.ErrNotFound) {
+		return nil
+	}
 	return err
-}
-
-func formatRow(row map[string]interface{}) map[string]interface{} {
-	for k, v := range row {
-		switch val := v.(type) {
-		case [16]byte:
-			row[k] = fmt.Sprintf("%x-%x-%x-%x-%x", val[0:4], val[4:6], val[6:8], val[8:10], val[10:16])
-		case pgtype.UUID:
-			if val.Valid {
-				row[k] = fmt.Sprintf("%x-%x-%x-%x-%x", val.Bytes[0:4], val.Bytes[4:6], val.Bytes[6:8], val.Bytes[8:10], val.Bytes[10:16])
-			}
-		}
-	}
-	return row
-}
-
-func collect(rows pgx.Rows) ([]map[string]interface{}, error) {
-	defer rows.Close()
-	all, err := pgx.CollectRows(rows, pgx.RowToMap)
-	if err != nil {
-		log.Printf("[collect error]: %v", err)
-		return nil, err
-	}
-	for i := range all {
-		all[i] = formatRow(all[i])
-	}
-	return all, nil
-}
-
-func first(rows pgx.Rows) (map[string]interface{}, error) {
-	all, err := collect(rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(all) == 0 {
-		return nil, pgx.ErrNoRows
-	}
-	return all[0], nil
 }

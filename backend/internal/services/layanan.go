@@ -7,52 +7,61 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/kemenag/inklusi-backend/internal/pocketbase"
 )
 
 // LayananRepository handles public service submissions
-// (booking prioritas, pengaduan, formulir identifikasi, tracking berkas).
+// (booking prioritas, pengaduan, formulir identifikasi, tracking berkas) via PocketBase.
 type LayananRepository struct {
-	pool   *pgxpool.Pool
-	schema string
+	pb *pocketbase.Client
 }
 
-// NewLayanan creates the repository bound to the kemenag_inklusi schema.
-func NewLayanan(pool *pgxpool.Pool) *LayananRepository {
-	return &LayananRepository{pool: pool, schema: "kemenag_inklusi"}
+// NewLayanan creates the repository bound to PocketBase.
+func NewLayanan(pb *pocketbase.Client) *LayananRepository {
+	return &LayananRepository{pb: pb}
 }
 
 // Booking is a priority queue booking submission.
 type Booking struct {
-	ID       int64  `json:"id"`
-	Kode     string `json:"kode"`
-	Nama     string `json:"nama"`
-	Kategori string `json:"kategori"`
-	Layanan  string `json:"layanan"`
-	Tanggal  string `json:"tanggal"`
-	Waktu    string `json:"waktu"`
+	ID         string `json:"id"`
+	Kode       string `json:"kode"`
+	Nama       string `json:"nama"`
+	Kategori   string `json:"kategori"`
+	Layanan    string `json:"layanan"`
+	Tanggal    string `json:"tanggal"`
+	Waktu      string `json:"waktu"`
 	Keterangan string `json:"keterangan"`
-	Status   string `json:"status"`
+	Status     string `json:"status"`
 }
 
-// CreateBooking inserts a booking and returns it with a generated queue code.
+// CreateBooking inserts a booking into PocketBase and returns it with a generated queue code.
 func (r *LayananRepository) CreateBooking(ctx context.Context, b *Booking) (*Booking, error) {
 	kode := fmt.Sprintf("VIP-%d", 1000+rand.Intn(9000))
-	q := `INSERT INTO ` + r.schema + `.booking_prioritas (kode, nama, kategori, layanan, tanggal, waktu, keterangan, status)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,'Menunggu') RETURNING id, status`
-	err := r.pool.QueryRow(ctx, q, kode, b.Nama, b.Kategori, b.Layanan, b.Tanggal, b.Waktu, b.Keterangan).
-		Scan(&b.ID, &b.Status)
+	data := map[string]interface{}{
+		"kode":       kode,
+		"nama":       b.Nama,
+		"kategori":   b.Kategori,
+		"layanan":    b.Layanan,
+		"tanggal":    b.Tanggal,
+		"waktu":      b.Waktu,
+		"keterangan": b.Keterangan,
+		"status":     "Menunggu",
+	}
+
+	rec, err := r.pb.CreateRecord(ctx, "booking_prioritas", data)
 	if err != nil {
 		return nil, err
 	}
+
+	b.ID, _ = rec["id"].(string)
 	b.Kode = kode
+	b.Status = "Menunggu"
 	return b, nil
 }
 
 // Pengaduan is a complaint/whistleblowing submission.
 type Pengaduan struct {
-	ID       int64  `json:"id"`
+	ID       string `json:"id"`
 	Nama     string `json:"nama,omitempty"`
 	Kategori string `json:"kategori"`
 	Detail   string `json:"detail"`
@@ -60,39 +69,56 @@ type Pengaduan struct {
 	Status   string `json:"status"`
 }
 
-// CreatePengaduan inserts a complaint.
+// CreatePengaduan inserts a complaint into PocketBase.
 func (r *LayananRepository) CreatePengaduan(ctx context.Context, p *Pengaduan) (*Pengaduan, error) {
-	q := `INSERT INTO ` + r.schema + `.pengaduan (nama, kategori, detail, lampiran, status)
-		VALUES ($1,$2,$3,$4,'Baru') RETURNING id, status`
-	err := r.pool.QueryRow(ctx, q, p.Nama, p.Kategori, p.Detail, p.Lampiran).
-		Scan(&p.ID, &p.Status)
+	data := map[string]interface{}{
+		"nama":     p.Nama,
+		"kategori": p.Kategori,
+		"detail":   p.Detail,
+		"lampiran": p.Lampiran,
+		"status":   "Baru",
+	}
+
+	rec, err := r.pb.CreateRecord(ctx, "pengaduan", data)
 	if err != nil {
 		return nil, err
 	}
+
+	p.ID, _ = rec["id"].(string)
+	p.Status = "Baru"
 	return p, nil
 }
 
 // Formulir is a vulnerable-group identification form submission.
 type Formulir struct {
-	ID         int64  `json:"id"`
-	Nama       string `json:"nama"`
-	NIK        string `json:"nik"`
-	Telepon    string `json:"telepon"`
-	Kategori   string `json:"kategori"`
-	Layanan    string `json:"layanan"`
-	Kebutuhan  string `json:"kebutuhan"`
-	Lampiran   string `json:"lampiran,omitempty"`
+	ID        string `json:"id"`
+	Nama      string `json:"nama"`
+	NIK       string `json:"nik"`
+	Telepon   string `json:"telepon"`
+	Kategori  string `json:"kategori"`
+	Layanan   string `json:"layanan"`
+	Kebutuhan string `json:"kebutuhan"`
+	Lampiran  string `json:"lampiran,omitempty"`
 }
 
-// CreateFormulir inserts an identification form.
+// CreateFormulir inserts an identification form into PocketBase.
 func (r *LayananRepository) CreateFormulir(ctx context.Context, f *Formulir) (*Formulir, error) {
-	q := `INSERT INTO ` + r.schema + `.formulir_identifikasi (nama, nik, telepon, kategori, layanan, kebutuhan, lampiran)
-		VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`
-	err := r.pool.QueryRow(ctx, q, f.Nama, f.NIK, f.Telepon, f.Kategori, f.Layanan, f.Kebutuhan, f.Lampiran).
-		Scan(&f.ID)
+	data := map[string]interface{}{
+		"nama":      f.Nama,
+		"nik":       f.NIK,
+		"telepon":   f.Telepon,
+		"kategori":  f.Kategori,
+		"layanan":   f.Layanan,
+		"kebutuhan": f.Kebutuhan,
+		"lampiran":  f.Lampiran,
+	}
+
+	rec, err := r.pb.CreateRecord(ctx, "formulir_identifikasi", data)
 	if err != nil {
 		return nil, err
 	}
+
+	f.ID, _ = rec["id"].(string)
 	return f, nil
 }
 
@@ -105,35 +131,50 @@ type TrackingStep struct {
 
 // Berkas describes a tracked document.
 type Berkas struct {
-	ID       int64          `json:"id"`
-	Resi     string         `json:"resi"`
-	Layanan  string         `json:"layanan"`
-	Pemohon  string         `json:"pemohon"`
-	Status   string         `json:"status"`
-	Steps    []TrackingStep `json:"steps"`
-	Updated  string         `json:"updated_at"`
+	ID      string         `json:"id"`
+	Resi    string         `json:"resi"`
+	Layanan string         `json:"layanan"`
+	Pemohon string         `json:"pemohon"`
+	Status  string         `json:"status"`
+	Steps   []TrackingStep `json:"steps"`
+	Updated string         `json:"updated_at"`
 }
 
-// TrackBerkas looks up a document by its resi number.
+// TrackBerkas looks up a document by its resi number in PocketBase.
 func (r *LayananRepository) TrackBerkas(ctx context.Context, resi string) (*Berkas, error) {
-	q := `SELECT id, resi, layanan, pemohon, status,
-		COALESCE(langkah::text, '[]'), COALESCE(updated_at::text, '')
-		FROM ` + r.schema + `.berkas_tracking WHERE resi = $1 LIMIT 1`
-	var b Berkas
-	var stepsJSON []byte
-	err := r.pool.QueryRow(ctx, q, resi).Scan(&b.ID, &b.Resi, &b.Layanan, &b.Pemohon, &b.Status, &stepsJSON, &b.Updated)
+	filter := fmt.Sprintf("resi='%s'", resi)
+	items, _, err := r.pb.ListRecords(ctx, "berkas_tracking", filter, "", 1, 1)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
-		}
 		return nil, err
 	}
-	if len(stepsJSON) > 0 {
-		if err := json.Unmarshal(stepsJSON, &b.Steps); err != nil {
-			b.Steps = []TrackingStep{}
+	if len(items) == 0 {
+		return nil, ErrNotFound
+	}
+
+	rec := items[0]
+	b := &Berkas{
+		ID:      fmt.Sprintf("%v", rec["id"]),
+		Resi:    fmt.Sprintf("%v", rec["resi"]),
+		Layanan: fmt.Sprintf("%v", rec["layanan"]),
+		Pemohon: fmt.Sprintf("%v", rec["pemohon"]),
+		Status:  fmt.Sprintf("%v", rec["status"]),
+	}
+	if upd, ok := rec["updated"].(string); ok {
+		b.Updated = upd
+	} else if upd, ok := rec["updated_at"].(string); ok {
+		b.Updated = upd
+	}
+
+	if rawSteps, ok := rec["langkah"]; ok && rawSteps != nil {
+		if stepsBytes, err := json.Marshal(rawSteps); err == nil {
+			_ = json.Unmarshal(stepsBytes, &b.Steps)
 		}
 	}
-	return &b, nil
+	if b.Steps == nil {
+		b.Steps = []TrackingStep{}
+	}
+
+	return b, nil
 }
 
 // ErrNotFound signals a missing record.

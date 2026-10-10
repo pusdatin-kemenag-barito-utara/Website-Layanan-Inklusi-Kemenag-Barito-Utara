@@ -1,90 +1,66 @@
 package storage
 
 import (
-	"bytes"
+	"context"
 	"fmt"
-	"io"
 	"mime/multipart"
-	"net/http"
-	"path"
 	"strings"
-	"time"
+
+	"github.com/kemenag/inklusi-backend/internal/pocketbase"
 )
 
-// Storage wraps Supabase Storage for file uploads.
+// Storage handles file uploads backed by PocketBase.
 type Storage struct {
-	supabaseURL string
-	serviceKey  string
-	bucket      string
+	pb         *pocketbase.Client
+	collection string
 }
 
-// New creates a Storage client for the given Supabase project.
-func New(supabaseURL, serviceKey, bucket string) *Storage {
-	return &Storage{supabaseURL: strings.TrimRight(supabaseURL, "/"), serviceKey: serviceKey, bucket: bucket}
+// New creates a Storage client using PocketBase.
+func New(pb *pocketbase.Client, collection string) *Storage {
+	if collection == "" {
+		collection = "uploads"
+	}
+	return &Storage{pb: pb, collection: collection}
 }
 
-// Enabled reports whether the client has enough config to actually upload.
+// Enabled reports whether the client has valid configuration.
 func (s *Storage) Enabled() bool {
-	return s.supabaseURL != "" && s.serviceKey != ""
+	return s.pb != nil && s.pb.BaseURL != ""
 }
 
-// Upload stores a file under the given logical name and returns its public URL.
+// Upload stores a file in the PocketBase collection and returns its direct public URL.
 func (s *Storage) Upload(name string, file multipart.File, contentType string) (string, error) {
 	if !s.Enabled() {
 		return "", fmt.Errorf("storage not configured")
 	}
 
-	data, err := io.ReadAll(file)
+	ctx := context.Background()
+	rec, err := s.pb.UploadFile(ctx, s.collection, "file", name, file)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("pocketbase upload failed: %w", err)
 	}
 
-	ts := time.Now().UTC().Format("20060102")
-	objectPath := path.Join(ts, name)
-
-	url := fmt.Sprintf("%s/storage/v1/object/%s/%s", s.supabaseURL, s.bucket, objectPath)
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Authorization", "Bearer "+s.serviceKey)
-	req.Header.Set("apikey", s.serviceKey)
-	req.Header.Set("Content-Type", contentType)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("upload failed (%d): %s", resp.StatusCode, string(body))
+	recID, _ := rec["id"].(string)
+	fileName, _ := rec["file"].(string)
+	if recID == "" || fileName == "" {
+		return "", fmt.Errorf("invalid upload response")
 	}
 
-	return fmt.Sprintf("%s/storage/v1/object/public/%s/%s", s.supabaseURL, s.bucket, objectPath), nil
+	publicURL := fmt.Sprintf("%s/api/files/%s/%s/%s", s.pb.BaseURL, s.collection, recID, fileName)
+	return publicURL, nil
 }
 
-// Remove deletes an object given its full public URL.
+// Remove deletes a file record given its public URL.
 func (s *Storage) Remove(publicURL string) error {
-	prefix := fmt.Sprintf("%s/storage/v1/object/public/%s/", s.supabaseURL, s.bucket)
+	prefix := fmt.Sprintf("%s/api/files/%s/", s.pb.BaseURL, s.collection)
 	if !strings.HasPrefix(publicURL, prefix) {
 		return nil
 	}
-	objectPath := strings.TrimPrefix(publicURL, prefix)
-
-	url := fmt.Sprintf("%s/storage/v1/object/%s/%s", s.supabaseURL, s.bucket, objectPath)
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	if err != nil {
-		return err
+	rem := strings.TrimPrefix(publicURL, prefix)
+	parts := strings.Split(rem, "/")
+	if len(parts) >= 1 {
+		recID := parts[0]
+		return s.pb.DeleteRecord(context.Background(), s.collection, recID)
 	}
-	req.Header.Set("Authorization", "Bearer "+s.serviceKey)
-	req.Header.Set("apikey", s.serviceKey)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
 	return nil
 }

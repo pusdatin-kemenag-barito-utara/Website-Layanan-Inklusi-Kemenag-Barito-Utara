@@ -13,12 +13,15 @@ frontend/
   packages/ui/           Komponen UI bersama (Navbar, Footer, widget)
 ```
 
-Semua data disajikan lewat API Fiber (`backend`) yang terhubung transparan via SSR proxy `/api` pada frontend Astro. Autentikasi admin memakai `Supabase Auth` + RBAC `kemenag_pusdatin` + JWT cookie `inklusi-auth` (HTTPOnly). Anti-bot memakai Cloudflare Turnstile. Secret dikelola secara terpusat lewat Infisical Cloud.
+Semua data disajikan lewat API Fiber (`backend`) yang terhubung transparan via SSR proxy `/api` pada frontend Astro. Autentikasi admin memakai `PocketBase Auth` + JWT cookie `inklusi-auth` (HTTPOnly). Anti-bot memakai Cloudflare Turnstile. Secret dikelola secara terpusat lewat Infisical Cloud.
 
-## Skema Database
+## Skema Database & Collections
 
-- `kemenag_inklusi` — tabel konten & pelayanan (berita, pengumuman, agenda, galeri, dokumen, booking_prioritas, pengaduan, formulir_identifikasi, berkas_tracking).
-- `kemenag_pusdatin` — pengguna dan `app_permissions` untuk RBAC lintas aplikasi.
+Database menggunakan PocketBase instance (`https://db-inklusi.kemenag-baritoutara.com`):
+- **CMS & Konten**: `berita`, `pengumuman`, `agenda`, `galeri`, `dokumen`.
+- **Layanan Publik**: `booking_prioritas`, `pengaduan`, `formulir_identifikasi`, `berkas_tracking`.
+- **Media & Penyimpanan**: `uploads` (File Storage publik).
+- **Pengguna & RBAC**: `users` (Auth collection dengan role `super_admin`, `admin`, `user`).
 
 ## Persyaratan
 
@@ -49,8 +52,8 @@ npm run secrets:prod         # inspeksi secret environment prod
 - **Backend API (Go Fiber v3)**: `http://localhost:8080` (API Health: `http://localhost:8080/api/health`)
 
 Variabel environment dikelola terpusat di Infisical Cloud project `Kemenag Barito Utara` folder `/inklusi-kemenag` (lingkungan `dev` dan `prod`):
-- **Backend**: `PORT` (3000), `BACKEND_PORT` (8080), `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `PUSDATIN_URL`, `APP_ID`, `SESSION_SECRET`, `SESSION_COOKIE_NAME`, `SESSION_COOKIE_SECURE`, `CORS_ORIGINS`.
-- **Frontend (Publik & Admin)**: `PUBLIC_API_URL`, `PUBLIC_PUSDATIN_URL`, `PUBLIC_TURNSTILE_SITE_KEY`, `VITE_TURNSTILE_SITE_KEY`.
+- **Backend**: `PORT` (3000), `BACKEND_PORT` (8080), `POCKETBASE_URL`, `POCKETBASE_ADMIN_EMAIL`, `POCKETBASE_ADMIN_PASSWORD`, `TURNSTILE_SECRET_KEY`, `APP_ID`, `SESSION_SECRET`, `SESSION_COOKIE_NAME`, `SESSION_COOKIE_SECURE`, `CORS_ORIGINS`.
+- **Frontend (Publik & Admin)**: `PUBLIC_API_URL`, `PUBLIC_TURNSTILE_SITE_KEY`, `VITE_TURNSTILE_SITE_KEY`.
 
 ## Build & Cek
 
@@ -61,14 +64,14 @@ npm run build:backend     # go build ./backend/cmd/server
 npm run lint:backend      # go vet ./...
 ```
 
-Migrasi SQL: jalankan file di `backend/migrations/` pada Supabase (schema `kemenag_inklusi`).
+Database & penyimpanan berkas dikelola langsung via PocketBase instance (`https://db-inklusi.kemenag-baritoutara.com`).
 
 ## Rute API Utama
 
 | Metode | Rute | Keterangan |
 |--------|------|------------|
 | GET | `/api/health` | Health check |
-| POST | `/api/auth/login` | Login (Turnstile + Supabase Auth) |
+| POST | `/api/auth/login` | Login (Turnstile + PocketBase Auth) |
 | POST | `/api/auth/logout` | Logout |
 | GET | `/api/auth/me` | Sesi admin saat ini |
 | GET | `/api/public/{berita,galeri,pengumuman,dokumen,agenda}` | Konten publik |
@@ -76,5 +79,5 @@ Migrasi SQL: jalankan file di `backend/migrations/` pada Supabase (schema `kemen
 | POST | `/api/public/pengaduan` | Pengaduan |
 | POST | `/api/public/formulir` | Formulir identifikasi |
 | GET | `/api/public/tracking/:resi` | Lacak berkas |
-| POST | `/api/public/upload` | Unggah lampiran ke Supabase Storage |
+| POST | `/api/public/upload` | Unggah lampiran ke PocketBase File Storage |
 | GET/POST/PUT/DELETE | `/api/admin/:table` | CRUD admin (whitelist tabel) |

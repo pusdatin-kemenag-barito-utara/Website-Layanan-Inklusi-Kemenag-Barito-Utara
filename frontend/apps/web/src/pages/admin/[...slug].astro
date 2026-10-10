@@ -1,6 +1,18 @@
 ---
 export const prerender = false;
 import AdminApp from "../../admin/AdminApp";
+import "../../admin/index.css";
+
+// Prevent browser caching & bfcache history restoration on admin routes
+Astro.response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+Astro.response.headers.set("Pragma", "no-cache");
+Astro.response.headers.set("Expires", "0");
+
+const turnstileSiteKey =
+  process.env.PUBLIC_TURNSTILE_SITE_KEY ||
+  process.env.VITE_TURNSTILE_SITE_KEY ||
+  process.env.TURNSTILE_SITE_KEY ||
+  "";
 ---
 
 <!doctype html>
@@ -8,6 +20,9 @@ import AdminApp from "../../admin/AdminApp";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Panel Admin - Layanan Inklusi Kemenag Barito Utara</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
@@ -19,8 +34,19 @@ import AdminApp from "../../admin/AdminApp";
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
       rel="stylesheet"
     />
+    <script is:inline define:vars={{ turnstileSiteKey }}>
+      window.__TURNSTILE_SITE_KEY__ = turnstileSiteKey;
+    </script>
   </head>
   <body>
-    <AdminApp client:only="react" />
+    <AdminApp client:only="react">
+      <div
+        slot="fallback"
+        style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif;"
+      >
+        <div style="width: 44px; height: 44px; border: 3.5px solid #e2e8f0; border-top-color: #0b6056; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <p style="margin-top: 1rem; color: #64748b; font-weight: 600; font-size: 0.9rem;">Memuat Panel Admin...</p>
+      </div>
+    </AdminApp>
   </body>
 </html>

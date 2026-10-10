@@ -1,24 +1,16 @@
 package middleware
 
 import (
-	"context"
-	"errors"
-
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/kemenag/inklusi-backend/internal/auth"
 	"github.com/kemenag/inklusi-backend/internal/config"
 )
-
-var errNoRows = errors.New("no rows in result set")
 
 // CtxUserKey is the Fiber context key holding the authenticated Claims.
 const CtxUserKey = "sessionUser"
 
 // RequireSession validates the session (cookie or Authorization Bearer) and injects user claims into context.
-func RequireSession(cfg *config.Config, _ *pgxpool.Pool) fiber.Handler {
+func RequireSession(cfg *config.Config) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		token := c.Cookies(cfg.SessionCookieName)
 
@@ -62,46 +54,20 @@ func CurrentUser(c fiber.Ctx) *auth.Claims {
 	return v
 }
 
-// RequireAdmin ensures the authenticated user is allowed to access this app
-// (super_admin or a user with a valid app_permissions role).
-func RequireAdmin(cfg *config.Config, db *pgxpool.Pool) fiber.Handler {
+// RequireAdmin ensures the authenticated user is allowed to access the admin area
+// (super_admin, admin, or editor).
+func RequireAdmin(cfg *config.Config) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		user := CurrentUser(c)
 		if user == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthenticated"})
 		}
 
-		// super_admin bypasses app-specific permission.
-		if user.Role == "super_admin" {
+		// super_admin, admin, or editor allows admin CMS access.
+		if user.Role == "super_admin" || user.Role == "admin" || user.Role == "editor" {
 			return c.Next()
 		}
 
-		ok, err := HasAppPermission(c.Context(), db, user.UserID, cfg.AppID)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "rbac check failed"})
-		}
-		if !ok {
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "unauthorized"})
-		}
-
-		return c.Next()
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "unauthorized"})
 	}
-}
-
-// HasAppPermission checks the central pusdatin schema for a user's role in the app.
-func HasAppPermission(ctx context.Context, db *pgxpool.Pool, userID, appID string) (bool, error) {
-	const query = `
-		SELECT role FROM kemenag_pusdatin.app_permissions
-		WHERE user_id = $1 AND app_id = $2
-		LIMIT 1
-	`
-	var role string
-	err := db.QueryRow(ctx, query, userID, appID).Scan(&role)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-	return role != "none", nil
 }

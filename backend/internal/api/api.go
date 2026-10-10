@@ -8,17 +8,17 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kemenag/inklusi-backend/internal/config"
 	"github.com/kemenag/inklusi-backend/internal/content"
 	"github.com/kemenag/inklusi-backend/internal/middleware"
+	"github.com/kemenag/inklusi-backend/internal/pocketbase"
 )
 
 // Dependencies bundles shared services passed to route handlers.
 type Dependencies struct {
 	Config  *config.Config
-	DB      *pgxpool.Pool
+	PB      *pocketbase.Client
 	repo    *content.Repository
 	watcher *MaintenanceWatcher
 }
@@ -26,7 +26,7 @@ type Dependencies struct {
 // Content returns the shared content repository (lazily initialized).
 func (d *Dependencies) Content() *content.Repository {
 	if d.repo == nil {
-		d.repo = content.NewRepository(d.DB)
+		d.repo = content.NewRepository(d.PB)
 	}
 	return d.repo
 }
@@ -34,7 +34,7 @@ func (d *Dependencies) Content() *content.Repository {
 // Watcher returns the shared maintenance watcher (lazily initialized).
 func (d *Dependencies) Watcher() *MaintenanceWatcher {
 	if d.watcher == nil {
-		d.watcher = NewMaintenanceWatcher(context.Background(), d.DB, d.Config)
+		d.watcher = NewMaintenanceWatcher(context.Background(), d.PB, d.Config)
 	}
 	return d.watcher
 }
@@ -59,19 +59,19 @@ func RegisterRoutes(app *fiber.App, deps *Dependencies) {
 	registerAdminRoutes(apiGroup, deps)
 	registerServiceRoutes(apiGroup, deps)
 
-	// maintenance status endpoints (event-driven via PostgreSQL LISTEN/NOTIFY)
+	// maintenance status endpoints
 	apiGroup.Get("/apps/status", deps.maintenanceStatus)
 	apiGroup.Get("/apps/status/events", deps.maintenanceSSE)
 }
 
 // requireAuth returns a Fiber handler that guards protected routes.
 func requireAuth(deps *Dependencies) fiber.Handler {
-	return middleware.RequireSession(deps.Config, deps.DB)
+	return middleware.RequireSession(deps.Config)
 }
 
 // requireAdmin ensures the authenticated user has a valid role for this app.
 func requireAdmin(deps *Dependencies) fiber.Handler {
-	return middleware.RequireAdmin(deps.Config, deps.DB)
+	return middleware.RequireAdmin(deps.Config)
 }
 
 // maintenanceStatus returns the real-time status loaded in-memory (0ms latency, zero repeated DB queries).
@@ -84,7 +84,7 @@ func (d *Dependencies) maintenanceStatus(c fiber.Ctx) error {
 		"updated_at":  updatedAt.Format(time.RFC3339),
 		"app_id":      d.Config.AppID,
 		"schema_name": "kemenag_inklusi",
-		"source":      "pusdatin_realtime_trigger",
+		"source":      "pocketbase_realtime",
 		"diag":        diag,
 	})
 }
@@ -107,7 +107,7 @@ func (d *Dependencies) maintenanceSSE(c fiber.Ctx) error {
 		"updated_at":  updatedAt.Format(time.RFC3339),
 		"app_id":      d.Config.AppID,
 		"schema_name": "kemenag_inklusi",
-		"source":      "pusdatin_realtime_trigger",
+		"source":      "pocketbase_realtime",
 	})
 
 	c.RequestCtx().SetBodyStreamWriter(func(w *bufio.Writer) {

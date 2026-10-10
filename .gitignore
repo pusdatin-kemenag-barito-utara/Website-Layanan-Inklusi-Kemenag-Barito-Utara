@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -24,6 +24,7 @@ playwright-report/
 dist/
 .cache/
 .turbo/
+.astro/
 backend/bin/
 backend/tmp/
 backend/build-errors.log

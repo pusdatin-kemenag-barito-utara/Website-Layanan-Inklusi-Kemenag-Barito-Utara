@@ -37,7 +37,12 @@ export const api = {
 
 export type LoginResult = { success: boolean; role?: string };
 export type ContentRow = Record<string, unknown> & { id: string | number };
+export type UserProfile = { id: string; email: string; role: string };
 
 export async function login(email: string, password: string, turnstileToken: string): Promise<LoginResult> {
   return api.post<LoginResult>("/api/auth/login", { email, password, turnstileToken });
+}
+
+export async function getMe(): Promise<UserProfile> {
+  return api.get<UserProfile>("/api/auth/me");
 }

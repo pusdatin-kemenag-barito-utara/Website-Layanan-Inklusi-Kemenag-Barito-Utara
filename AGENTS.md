@@ -15,11 +15,10 @@ Monorepo Layanan Inklusi Kemenag Barito Utara: Go Fiber API (BE) + situs publik 
 ## Aturan backend (Go)
 
 - Modul `github.com/kemenag/inklusi-backend`.
-- **Fiber v3** (`github.com/gofiber/fiber/v3`), pool pgx. Perbedaan v2→v3: handler `func(c fiber.Ctx) error` (interface, bukan pointer), `c.Bind().Body(&x)` menggantikan `BodyParser`, `c.Context()` = `context.Context` (bukan fasthttp), dan CORS memakai `[]string`.
-- Semua tabel dikunci schema `kemenag_inklusi`; RBAC baca tabel `kemenag_pusdatin.app_permissions`.
-- Rute publik konten tidak boleh langsung akses Supabase — harus lewat API Fiber.
-- Whitelist tabel admin ada di `backend/internal/content/content.go` (`allowedTables`); tambahkan tabel baru di sana bila perlu dikelola admin.
-- Migrasi SQL taruh di `backend/migrations/` (diurutkan `NNNN_*.sql`) dan jalankan manual di Supabase.
+- **Fiber v3** (`github.com/gofiber/fiber/v3`), PocketBase client (`internal/pocketbase`). Perbedaan v2→v3: handler `func(c fiber.Ctx) error` (interface, bukan pointer), `c.Bind().Body(&x)` menggantikan `BodyParser`, `c.Context()` = `context.Context` (bukan fasthttp), dan CORS memakai `[]string`.
+- Database dan file storage dikelola lewat PocketBase instance (`https://db-inklusi.kemenag-baritoutara.com`); auth & RBAC menggunakan PocketBase auth collection `users`.
+- Rute publik konten dan form layanan dilayani via API Fiber yang berinteraksi dengan PocketBase REST API.
+- Whitelist collection admin ada di `backend/internal/content/content.go` (`allowedTables`); tambahkan collection baru di sana bila perlu dikelola admin.
 - Dev memakai **Air** (`backend/.air.toml`): build output wajib `.exe` di Windows (`tmp/server.exe`). Jangan hardcode credential; baca semua dari env lewat `internal/config`.
 
 ## Aturan frontend (Astro + React)
@@ -38,4 +37,4 @@ Monorepo Layanan Inklusi Kemenag Barito Utara: Go Fiber API (BE) + situs publik 
 ## Referensi
 
 - Rute API: `backend/internal/api/*.go`.
-- Struktur lama Next.js sudah dihapus total; jangan menambah dependensi `next`/`@supabase/ssr`/`pg` di root atau FE.
+- Backend & Frontend sudah 100% independen dan migrasi ke PocketBase telah tuntas. Jangan menambah dependensi legacy (`next`, driver `pg`, dll.).

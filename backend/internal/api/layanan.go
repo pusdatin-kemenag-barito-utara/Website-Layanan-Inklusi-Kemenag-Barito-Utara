@@ -20,8 +20,8 @@ type LayananHandler struct {
 // NewLayananHandler creates a new handler instance.
 func NewLayananHandler(deps *Dependencies) *LayananHandler {
 	return &LayananHandler{
-		svc:     services.NewLayanan(deps.DB),
-		storage: storage.New(deps.Config.SupabaseURL, deps.Config.SupabaseServiceKey, "inklusi-assets"),
+		svc:     services.NewLayanan(deps.PB),
+		storage: storage.New(deps.PB, "uploads"),
 	}
 }
 

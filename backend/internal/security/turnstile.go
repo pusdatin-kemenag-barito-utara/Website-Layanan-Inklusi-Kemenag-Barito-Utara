@@ -9,11 +9,19 @@ import (
 
 // VerifyTurnstile validates a Cloudflare Turnstile token server-side.
 func VerifyTurnstile(secret, token, ip string) (bool, error) {
-	body, _ := json.Marshal(map[string]string{
+	payload := map[string]string{
 		"secret":   secret,
 		"response": token,
-		"remoteip": ip,
-	})
+	}
+	// remoteip is optional in Cloudflare Turnstile and omitted for local loopback
+	if ip != "" && ip != "127.0.0.1" && ip != "::1" && ip != "localhost" {
+		payload["remoteip"] = ip
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return false, err
+	}
 	req, err := http.NewRequest(http.MethodPost, "https://challenges.cloudflare.com/turnstile/v0/siteverify", bytes.NewReader(body))
 	if err != nil {
 		return false, err

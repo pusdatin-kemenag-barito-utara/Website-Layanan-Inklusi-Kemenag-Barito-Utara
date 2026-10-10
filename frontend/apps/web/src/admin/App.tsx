@@ -23,17 +23,31 @@ function RequireAuth({ children }: { children: ReactElement }) {
     let active = true;
     api
       .get<unknown>("/api/auth/me")
-      .then(() => active && setStatus("ok"))
-      .catch(() => active && setStatus("denied"));
+      .then(() => {
+        if (active) setStatus("ok");
+      })
+      .catch(() => {
+        if (active) setStatus("denied");
+      });
+
+    // Handle browser Back/Forward Cache (bfcache) restoration
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+
     return () => {
       active = false;
+      window.removeEventListener("pageshow", handlePageShow);
     };
-  }, []);
+  }, [location.pathname]);
 
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--background-color)" }}>
-        <p>Memuat sesi...</p>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
+        <p style={{ color: "#64748b", fontWeight: 600 }}>Memverifikasi sesi...</p>
       </div>
     );
   }

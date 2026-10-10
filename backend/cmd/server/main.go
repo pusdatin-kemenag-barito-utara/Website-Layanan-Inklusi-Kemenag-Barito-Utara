@@ -7,16 +7,16 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 
 	"github.com/kemenag/inklusi-backend/internal/api"
 	"github.com/kemenag/inklusi-backend/internal/config"
-	"github.com/kemenag/inklusi-backend/internal/db"
+	"github.com/kemenag/inklusi-backend/internal/pocketbase"
 )
 
 func main() {
-	// Central Pusdatin maintenance trigger integrated
 	portFlag := flag.String("port", "", "Server port override")
 	flag.Parse()
 
@@ -25,11 +25,7 @@ func main() {
 		cfg.Port = *portFlag
 	}
 
-	pool, err := db.NewPool(cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
-	}
-	defer pool.Close()
+	pbClient := pocketbase.NewClient(cfg.PocketBaseURL, cfg.PocketBaseAdminEmail, cfg.PocketBaseAdminPassword)
 
 	app := fiber.New(fiber.Config{
 		AppName: "Inklusi Kemenag API",
@@ -37,6 +33,12 @@ func main() {
 
 	app.Use(recover.New())
 	app.Use(requestid.New())
+	app.Use(helmet.New(helmet.Config{
+		XSSProtection:      "1; mode=block",
+		ContentTypeNosniff: "nosniff",
+		XFrameOptions:      "SAMEORIGIN",
+		ReferrerPolicy:     "strict-origin-when-cross-origin",
+	}))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: splitOrigins(cfg.CORSOrigins),
 		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
@@ -45,7 +47,7 @@ func main() {
 
 	api.RegisterRoutes(app, &api.Dependencies{
 		Config: cfg,
-		DB:     pool,
+		PB:     pbClient,
 	})
 
 	log.Printf("Inklusi Kemenag API listening on :%s", cfg.Port)
@@ -63,4 +65,3 @@ func splitOrigins(csv string) []string {
 	}
 	return out
 }
- 

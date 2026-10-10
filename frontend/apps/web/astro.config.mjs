@@ -28,8 +28,28 @@ export default defineConfig({
   },
   vite: {
     customLogger,
+    envPrefix: ["PUBLIC_", "VITE_"],
+    define: {
+      "import.meta.env.VITE_TURNSTILE_SITE_KEY": JSON.stringify(
+        process.env.VITE_TURNSTILE_SITE_KEY || process.env.PUBLIC_TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITE_KEY || ""
+      ),
+      "import.meta.env.PUBLIC_TURNSTILE_SITE_KEY": JSON.stringify(
+        process.env.PUBLIC_TURNSTILE_SITE_KEY || process.env.VITE_TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITE_KEY || ""
+      ),
+    },
     ssr: {
       noExternal: ["@inklusi/ui"],
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react/jsx-runtime",
+        "react-dom",
+        "react-dom/client",
+        "react-router-dom",
+        "lucide-react",
+        "@marsidev/react-turnstile",
+      ],
     },
     server: {
       proxy: {

@@ -1,10 +1,10 @@
 package api
 
 import (
+	"errors"
 	"log"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/jackc/pgx/v5"
 	"github.com/kemenag/inklusi-backend/internal/content"
 )
 
@@ -47,7 +47,7 @@ func (h *PublicHandler) ListBerita(c fiber.Ctx) error {
 func (h *PublicHandler) GetBeritaBySlug(c fiber.Ctx) error {
 	row, err := h.repo.BySlug(c.Context(), "berita", c.Params("slug"))
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, content.ErrNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "berita not found"})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to load berita"})
